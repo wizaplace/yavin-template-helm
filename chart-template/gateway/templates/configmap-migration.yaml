@@ -1,0 +1,14 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "authentication-gateway.fullname" . }}-migration
+  labels:
+    {{- include "authentication-gateway.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    #"helm.sh/hook": pre-install,pre-upgrade
+    #"helm.sh/hook-weight": "-1" # Extra priority to have it available before job
+    #"helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+data:
+  MYSQL_ROOT_URL: {{ printf "mysql://%s:%s@tcp(%s:%.0f)/%s?parseTime=true&multiStatements=true" .Values.dependencies.mysql.rootUser .Values.dependencies.mysql.rootPassword .Values.dependencies.mysql.host .Values.dependencies.mysql.port .Values.dependencies.mysql.database | quote }}

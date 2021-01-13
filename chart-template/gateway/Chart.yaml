@@ -1,0 +1,12 @@
+apiVersion: "v2"
+name: "authentication-gateway"
+description: "Authentication gateway bridges legacy usages with Yavin services"
+version: 0.0.0
+home: "https://github.com/wizaplace/ms-auth-gateway"
+kubeVersion: ">=1.15.0"
+type: "application"
+maintainers:
+  - name: "Karim HERAUD"
+    email: "karim.heraud@wizaplace.com"
+  - name: "Philippe VANDERMOERE"
+    email: "philippe@wizacha.com"

@@ -1,0 +1,109 @@
+client: "demo"
+environment: "demo"
+
+application:
+  replicas: 1
+
+  servicePort: 80
+  containerPort: 9000
+
+  restartPolicy: "Always"
+  terminationGracePeriodSeconds: 10
+  progressDeadlineSeconds: 60
+  
+  image:
+    registry: "wizaplaceglobal.azurecr.io"
+    name: "wizademo/auth"
+    tag: "1.1.0"
+    pullPolicy: "Always"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "32Mi"
+    limits:
+      cpu: "250m"
+      memory: "128Mi"
+  configuration:
+    mode: "production"
+    amqp:
+      maxMsg: 3
+      reconnectDelay: "10s"
+    pem:
+      publicKey: |
+        -----BEGIN PUBLIC KEY-----
+        MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzyRpsr0Fh2Edd+fBNo67
+        yqdZCNbdORP34SEdPbdPDeVDwFH2WlZWDAKkmUuU3yhBLWnS079gO6xArcW1J4dE
+        6JZ4Obq5E7tgThLOAvB+qVu6AK3b7Gl5xnRVlwaEcjRHeVyZQc8rvPLZOPRF0ijY
+        KvQ9aIiP4KuHAeMkWsqxzlbixAW9FXg6494xPJY9L841OFVSKVz4nXybbx0o/vi/
+        EX80yWX1W+FOgRsxoE2B0EsOH9Pm3KI0rvfNwqENgB1RoB3OGQDS5OVo+eX90u9E
+        qB4GNdMwJN/tWxU+9Ipf0RxGA3LodbZW8ce7ggkGuTb3ZFn7ATZjeA2O33n7NHNh
+        LwIDAQAB
+        -----END PUBLIC KEY-----
+      privateKey: |
+        -----BEGIN RSA PRIVATE KEY-----
+        MIIEpgIBAAKCAQEAzyRpsr0Fh2Edd+fBNo67yqdZCNbdORP34SEdPbdPDeVDwFH2
+        WlZWDAKkmUuU3yhBLWnS079gO6xArcW1J4dE6JZ4Obq5E7tgThLOAvB+qVu6AK3b
+        7Gl5xnRVlwaEcjRHeVyZQc8rvPLZOPRF0ijYKvQ9aIiP4KuHAeMkWsqxzlbixAW9
+        FXg6494xPJY9L841OFVSKVz4nXybbx0o/vi/EX80yWX1W+FOgRsxoE2B0EsOH9Pm
+        3KI0rvfNwqENgB1RoB3OGQDS5OVo+eX90u9EqB4GNdMwJN/tWxU+9Ipf0RxGA3Lo
+        dbZW8ce7ggkGuTb3ZFn7ATZjeA2O33n7NHNhLwIDAQABAoIBAQCLYVMGBA5uU7iC
+        cB0gWtadvBE602kz+O24PJHybx/wl64JAJ2ll6Z6mmSrCaJ4rht9NVG5TXKxdGxp
+        ATmuCWUio+zt22ihkFly71BTxgNUbfYwcswiva5FDQ5yet4wAmF9lgNBtucVUss7
+        eZJpoTYjYQjZB9rYMFK9wFs8BFu0HKh/nwQ7vuA8V5lu6lNBuKVgSjJa/4b0EeDA
+        M6695ycjK6nZ7yC5I9Koa4TqO+6LNnTiNMDNMxmCma9vFS8ZsIJBZ14NcEwMDDgm
+        zxl+xGZhhEjEQlx05UJrgF7iEr3PAIZw0zmkTEsrV+M8/AxGXo5IvywrejGg8Icm
+        c0zLAo3RAoGBAO+neJEBCHlk6txdKYUnPzmFn635TXCDtikDrOgAI9NjxLyhh9UN
+        LQ+FonxEl+jXPKk90NF6zv/+QCj0e7YNKQU6iGEh8zsRBvVERVlMh2x20lMqGYZ9
+        l2Hcrs9+l2AbT+ATMPR8DHooqkwzHzjSiQbziuJ9/8bV5SfbZa2rQysVAoGBAN1F
+        QrzzhqPnv3UE7ZI9sFJ7LdFkYNcczPqZTCa/Gi7PBc3SA5D2bR8KV/KMCfppxtx3
+        mphBiWq9KyIc62d0cVUPCotAjqKcnO7JVbrdSaOQCJbLVqTouMmg9cPL/zDKC5L9
+        tFw3lSz1T15CS/ytaWAaWURclUQP2lsn6xcIzZwzAoGBAJ1hX13qTcRar5lzXLbi
+        pTSDOe+oDmDbPh8FGOFqZhyGIka11VvmQTc2TRRKf3AbGO0TeTR378RRFZVPqIZP
+        cibK35DaGL8rWWRsJxaTmUNzbH/M3+JgS6+qmuoMeiBVD0lZkQadCByY4+0SjWhl
+        ajM0cHp4wCW1hb186PL5yyxZAoGBAKTTeiJsucgQ0xLlZ98/KsBWV8waHPVA1AR8
+        +zgFtQhXWLh4EAYFO0YbG2ZnIOuzrdn/El8GusmTPrU7m7PGDsJQ4QbYQSgqx9As
+        lDsNqlQ37938fH99iGFSEKEYrfD3IOYPLTJgiTQjTEsn0ZjYyJ05I3QED4DS2lJ7
+        CuluulL3AoGBALVlK1mQlD5K8EDmkeBMpYTCNwxRAuTPMgEXzKEaHQEreNM71ttz
+        5p41lg15tDyXJAEtlYiHWQseUvg/KLbXsohfIVikZRim8TlcbUZuFMM1Z8z2jrHJ
+        MeQ4FLlnQUoYZK+Y3QIlmp2yIrf8YKbChJ03AJ4O+I6R/TyujU7X9+2Y
+        -----END RSA PRIVATE KEY-----
+    jwt:
+      expirationDelay: "600s"
+      disableSignCheck: true
+    proxyUri: "http://lb-ingress-nginx-controller"
+  probes:
+    path: "/healthz"
+    liveness:
+      initialDelaySeconds: 1
+      periodSeconds: 30
+      successThreshold: 1
+      failureThreshold: 3
+      timeoutSeconds: 1
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 30
+      successThreshold: 1
+      failureThreshold: 1
+      timeoutSeconds: 1
+dependencies:
+  amqp:
+    host: "bus-rabbitmq"
+    port: 5672
+    vhost: ""
+    user: "gateway"
+    password: "gateway"
+    queue: "auth-gateway"
+  mysql:
+    host: "db-mysql"
+    port: 3306
+    user: "gateway"
+    password: "gateway"
+    rootUser: "root"
+    rootPassword: "demo"
+    database: "gateway"
+  redis:
+    host: "cache-redis-master"
+    port: 6379
+    password: "demo"
+migration:
+  activeDeadlineSeconds: 60

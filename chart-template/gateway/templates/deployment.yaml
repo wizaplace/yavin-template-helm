@@ -1,0 +1,94 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "authentication-gateway.fullname" . }}
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    {{- include "authentication-gateway.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.application.replicas }}
+  progressDeadlineSeconds: {{ .Values.application.progressDeadlineSeconds }}
+  selector:
+    matchLabels:
+      chart: {{ template "authentication-gateway.chart" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "authentication-gateway.labels" . | nindent 8 }}
+      annotations:
+        checksum/configmap: {{ include (print .Template.BasePath "/configmap-application.yaml") . | sha256sum | quote }}
+    spec:
+      restartPolicy: {{ .Values.application.restartPolicy }}
+      terminationGracePeriodSeconds: {{  .Values.application.terminationGracePeriodSeconds }}
+      volumes:
+        - name: {{ template "authentication-gateway.fullname" . }}
+          configMap:
+            name: {{ template "authentication-gateway.fullname" . }}
+      initContainers:
+        - name: "waiting-amqp"
+          image: "busybox"
+          imagePullPolicy: "IfNotPresent"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do nc ${AMQP_HOST} ${AMQP_PORT} -w 1 -z && break; sleep 1; done"]
+          env:
+            - name: "AMQP_HOST"
+              value: {{ .Values.dependencies.amqp.host | squote }}
+            - name: "AMQP_PORT"
+              value: {{ .Values.dependencies.amqp.port | squote }}
+        - name: "waiting-mysql"
+          image: "busybox"
+          imagePullPolicy: "IfNotPresent"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do nc ${MYSQL_HOST} ${MYSQL_PORT} -w 1 -z && break; sleep 1; done"]
+          env:
+            - name: "MYSQL_HOST"
+              value: {{ .Values.dependencies.mysql.host | squote }}
+            - name: "MYSQL_PORT"
+              value: {{ .Values.dependencies.mysql.port | squote }}
+        - name: "waiting-redis"
+          image: "busybox"
+          imagePullPolicy: "IfNotPresent"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do nc ${REDIS_HOST} ${REDIS_PORT} -w 1 -z && break; sleep 1; done"]
+          env:
+            - name: "REDIS_HOST"
+              value: {{ .Values.dependencies.redis.host | squote }}
+            - name: "REDIS_PORT"
+              value: {{ .Values.dependencies.redis.port | squote }}
+      containers:
+        - name: "golang"
+          image: {{ .Values.application.image.registry }}/{{ .Values.application.image.name }}:{{ .Values.application.image.tag }}
+          imagePullPolicy: {{ .Values.application.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ template "authentication-gateway.fullname" . }}
+          resources:
+            requests:
+              cpu: {{ .Values.application.resources.requests.cpu }}
+              memory: {{ .Values.application.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.application.resources.limits.cpu }}
+              memory: {{ .Values.application.resources.limits.memory }}
+          livenessProbe:
+            httpGet:
+              scheme: "HTTP"
+              path: {{ .Values.application.probes.path }}
+              port: {{ .Values.application.containerPort }}
+            initialDelaySeconds: {{ .Values.application.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.application.probes.liveness.periodSeconds }}
+            successThreshold: {{ .Values.application.probes.liveness.successThreshold }}
+            failureThreshold: {{ .Values.application.probes.liveness.failureThreshold }}
+            timeoutSeconds: {{ .Values.application.probes.liveness.timeoutSeconds }}
+          readinessProbe:
+            httpGet:
+              scheme: "HTTP"
+              path: {{ .Values.application.probes.path }}
+              port: {{ .Values.application.containerPort }}
+            initialDelaySeconds: {{ .Values.application.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.application.probes.readiness.periodSeconds }}
+            successThreshold: {{ .Values.application.probes.readiness.successThreshold }}
+            failureThreshold: {{ .Values.application.probes.readiness.failureThreshold }}
+            timeoutSeconds: {{ .Values.application.probes.readiness.timeoutSeconds }}

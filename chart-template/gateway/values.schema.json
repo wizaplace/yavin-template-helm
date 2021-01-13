@@ -1,0 +1,379 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "nameOverride": {
+      "description": "Override name for this chart",
+      "type": "string"
+    },
+    "client": {
+      "description": "Name of platform / client",
+      "type": "string",
+      "minLength": 1
+    },
+    "environment": {
+      "description": "Name of environnement",
+      "type": "string",
+      "minLength": 1
+    },
+    "application": {
+      "description": "Configuration of application process",
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "description": "Number of pod replicas",
+          "type": "integer"
+        },
+        "servicePort": {
+          "description": "Service port exposed for the application",
+          "type": "integer"
+        },
+        "containerPort": {
+          "description": "Port exposed in the application container",
+          "type": "integer"
+        },
+        "restartPolicy": {
+          "description": "Restart policy for the application Pod",
+          "type": "string",
+          "enum": [
+            "Always",
+            "OnFailure",
+            "Never"
+          ]
+        },
+        "terminationGracePeriodSeconds": {
+          "description": "Allowed duration before end of Pod (on scale up / down, rescheduling...)",
+          "type": "integer"
+        },
+        "progressDeadlineSeconds": {
+          "description": "Allowed duration between pod lifecycle change (pullImage, Starting...)",
+          "type": "integer"
+        },
+        "image": {
+          "description": "Image of application",
+          "type": "object",
+          "properties": {
+            "registry": {
+              "description": "URL of registry containing docker image",
+              "type": "string"
+            },
+            "name": {
+              "description": "Name of docker image",
+              "type": "string"
+            },
+            "tag": {
+              "description": "Version of the application",
+              "type": "string",
+              "pattern": "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+)?$"
+            },
+            "pullPolicy": {
+              "description": "Pull policy for application image",
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
+              ]
+            }
+          },
+          "required": [
+            "registry",
+            "name",
+            "tag",
+            "pullPolicy"
+          ]
+        },
+        "resources": {
+          "description": "Resource constraints for application",
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^\\d+([eE]\\d+)?([eEpPtTgGmMkK][Ii]?)?$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^\\d+([eE]\\d+)?([eEpPtTgGmMkK][Ii]?)?$"
+                }
+              },
+              "required": [
+                "cpu",
+                "memory"
+              ]
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^\\d+([eE]\\d+)?([eEpPtTgGmMkK][Ii]?)?$"
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^\\d+([eE]\\d+)?([eEpPtTgGmMkK][Ii]?)?$"
+                }
+              },
+              "required": [
+                "cpu",
+                "memory"
+              ]
+            }
+          },
+          "required": [
+            "requests",
+            "limits"
+          ]
+        },
+        "configuration": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "production"
+              ]
+            },
+            "amqp": {
+              "type": "object",
+              "properties": {
+                "maxMsg": {
+                  "description": "Number of messages in batch for consumer",
+                  "type": "integer"
+                },
+                "reconnectDelay": {
+                  "type": "string",
+                  "pattern": "^[0-9]+[smh]$"
+                }
+              },
+              "required": [
+                "maxMsg",
+                "reconnectDelay"
+              ]
+            },
+            "pem": {
+              "type": "object",
+              "properties": {
+                "publicKey": {
+                  "type": "string"
+                },
+                "privateKey": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "publicKey",
+                "privateKey"
+              ]
+            },
+            "jwt": {
+              "type": "object",
+              "properties": {
+                "expirationDelay": {
+                  "type": "string",
+                  "pattern": "^[0-9]+[smh]$"
+                },
+                "disableSignCheck": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "expirationDelay",
+                "disableSignCheck"
+              ]
+            },
+            "proxyUri": {
+              "description": "Base uri for proxy requests",
+              "type": "string"
+            }
+          },
+          "required": [
+            "mode",
+            "amqp",
+            "pem",
+            "jwt"
+          ]
+        },
+        "probes": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "liveness": {
+              "properties": {
+                "initialDelaySeconds": {
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "type": "integer"
+                },
+                "successThreshold": {
+                  "type": "integer"
+                },
+                "failureThreshold": {
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "type": "integer"
+                }
+              }
+            },
+            "readiness": {
+              "properties": {
+                "initialDelaySeconds": {
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "type": "integer"
+                },
+                "successThreshold": {
+                  "type": "integer"
+                },
+                "failureThreshold": {
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "required": [
+            "path",
+            "liveness",
+            "readiness"
+          ]
+        }
+      },
+      "required": [
+        "replicas",
+        "servicePort",
+        "containerPort",
+        "restartPolicy",
+        "terminationGracePeriodSeconds",
+        "progressDeadlineSeconds",
+        "image",
+        "resources",
+        "configuration",
+        "probes"
+      ]    
+    },
+    "dependencies": {
+      "type": "object",
+      "properties": {
+        "amqp": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "vhost": {
+              "type": "string"
+            },
+            "user": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "host",
+            "port",
+            "vhost",
+            "user",
+            "password",
+            "queue"
+          ]
+        },
+        "mysql": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "user": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "rootUser": {
+              "type": "string"
+            },
+            "rootPassword": {
+              "type": "string"
+            },
+            "database": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "host",
+            "port",
+            "user",
+            "password",
+            "rootUser",
+            "rootPassword",
+            "database"
+          ]
+        },
+        "redis": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "password": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "host",
+            "port",
+            "password"
+          ]
+        }
+      },
+      "required": [
+        "amqp",
+        "mysql",
+        "redis"
+      ]
+    },
+    "migration": {
+      "type": "object",
+      "properties": {
+        "activeDeadlineSeconds": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "activeDeadlineSeconds"
+      ]
+    }
+  },
+  "required": [
+    "client",
+    "environment",
+    "application",
+    "dependencies",
+    "migration"
+  ]
+}
+

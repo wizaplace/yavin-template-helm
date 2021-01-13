@@ -1,0 +1,366 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Values",
+  "type": "object",
+  "required": [
+    "client",
+    "environment",
+    "version",
+    "deployment",
+    "probe",
+    "nginx",
+    "php"
+  ],
+  "properties": {
+    "client": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "deployment": {
+      "type": "object",
+      "required": [
+        "web",
+        "messenger-consumer"
+      ],
+      "properties": {
+        "web": {
+          "$ref": "#/definitions/deployment"
+        },
+        "messenger-consumer": {
+          "$ref": "#/definitions/deployment"
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "required": [
+        "liveness",
+        "readiness"
+      ],
+      "properties": {
+        "liveness": {
+          "$ref": "#/definitions/probe"
+        },
+        "readiness": {
+          "$ref": "#/definitions/probe"
+        }
+      }
+    },
+    "nginx": {
+      "type": "object",
+      "required": [
+        "port",
+        "image",
+        "resources"
+      ],
+      "properties": {
+        "port": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 65536
+        },
+        "image": {
+          "$ref": "#/definitions/docker_image"
+        },
+        "resources": {
+          "$ref": "#/definitions/resources"
+        }
+      }
+    },
+    "php": {
+      "type": "object",
+      "required": [
+        "image",
+        "resources",
+        "config"
+      ],
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/docker_image"
+        },
+        "resources": {
+          "$ref": "#/definitions/resources"
+        },
+        "config": {
+          "type": "object",
+          "required": [
+            "timezone"
+          ],
+          "properties": {
+            "timezone": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "properties": {
+        "amqp": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "vhost": {
+              "type": "string"
+            },
+            "user": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "host",
+            "port",
+            "vhost",
+            "user",
+            "password",
+            "queue"
+          ]
+        },
+        "mysql": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "user": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "rootUser": {
+              "type": "string"
+            },
+            "rootPassword": {
+              "type": "string"
+            },
+            "database": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "host",
+            "port",
+            "user",
+            "password",
+            "rootUser",
+            "rootPassword",
+            "database"
+          ]
+        },
+        "redis": {
+          "type": "object",
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "password": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "host",
+            "port",
+            "password"
+          ]
+        }
+      },
+      "required": [
+        "amqp",
+        "mysql",
+        "redis"
+      ]
+    },
+    "migration": {
+      "type": "object",
+      "required": [
+        "active_deadline_seconds"
+      ],
+      "properties": {
+        "active_deadline_seconds": {
+          "type": "integer"
+        },
+        "amqp": {
+          "$ref": "#/definitions/root_authentication"
+        },
+        "mysql": {
+          "$ref": "#/definitions/root_authentication"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "deployment": {
+      "type": "object",
+      "required": [
+        "restart_policy",
+        "termination_grace_period_seconds",
+        "progress_deadline_seconds",
+        "replicas",
+        "revision_history_limit",
+        "rolling_update"
+      ],
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "restart_policy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "OnFailure ",
+            "Never"
+          ]
+        },
+        "termination_grace_period_seconds": {
+          "type": "integer"
+        },
+        "progress_deadline_seconds": {
+          "type": "integer"
+        },
+        "replicas": {
+          "type": "integer"
+        },
+        "revision_history_limit": {
+          "type": "integer"
+        },
+        "rolling_update": {
+          "type": "object",
+          "required": [
+            "type",
+            "max_surge",
+            "max_unavailable"
+          ],
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "max_surge": {
+              "type": "integer"
+            },
+            "max_unavailable": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "required": [
+        "path",
+        "initial_delay_seconds",
+        "period_seconds",
+        "success_threshold",
+        "failure_threshold",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "initial_delay_seconds": {
+          "type": "integer"
+        },
+        "period_seconds": {
+          "type": "integer"
+        },
+        "success_threshold": {
+          "type": "integer"
+        },
+        "failure_threshold": {
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "type": "integer"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "required": [
+        "requests",
+        "limits"
+      ],
+      "properties": {
+        "requests": {
+          "$ref": "#/definitions/resources_detail"
+        },
+        "limits": {
+          "$ref": "#/definitions/resources_detail"
+        }
+      }
+    },
+    "resources_detail": {
+      "type": "object",
+      "required": [
+        "cpu",
+        "memory"
+      ],
+      "properties": {
+        "cpu": {
+          "type": "string"
+        },
+        "memory": {
+          "type": "string"
+        }
+      }
+    },
+    "docker_image": {
+      "type": "object",
+      "required": [
+        "tag",
+        "pullPolicy"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "pullPolicy": {
+          "type": "string"
+        }
+      }
+    },
+    "root_authentication": {
+      "type": "object",
+      "required": [
+        "root_user",
+        "root_password"
+      ],
+      "properties": {
+        "root_user": {
+          "type": "string"
+        },
+        "root_password": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

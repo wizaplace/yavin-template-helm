@@ -1,0 +1,116 @@
+client: "demo"
+environment: "demo"
+version: "1"
+
+deployment:
+  web:
+    restart_policy: "Always"
+    termination_grace_period_seconds: 10
+    progress_deadline_seconds: 60
+    replicas: 1 
+    revision_history_limit: 10
+
+    rolling_update:
+      type: "RollingUpdate"
+      max_surge: 1
+      max_unavailable: 1
+
+  messenger-consumer:
+    command: "['bin/console', 'messenger:consume',  'async_yavin','async', '--memory-limit=128M', '-vv']"
+    restart_policy: "Always"
+    termination_grace_period_seconds: 10
+    progress_deadline_seconds: 60
+    replicas: 1 
+    revision_history_limit: 10
+    rolling_update:
+      type: "RollingUpdate"
+      max_surge: 1
+      max_unavailable: 1
+
+probe:
+  liveness:
+    path: "/healthz"
+    initial_delay_seconds: 1
+    period_seconds: 30
+    success_threshold: 1
+    failure_threshold: 3
+    timeout_seconds: 1
+
+  readiness:
+    path: "/healthz"
+    initial_delay_seconds: 5
+    period_seconds: 30
+    success_threshold: 1
+    failure_threshold: 2
+    timeout_seconds: 1
+
+nginx:
+  port: 80
+  image:
+    repository: "nginx"
+    tag: "1.19.5"
+    pullPolicy: "IfNotPresent"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+
+php:
+  image:
+    registry: "wizaplaceglobal.azurecr.io"
+    name: "wizademo/webhook"
+    tag: "1.0.0"
+    pullPolicy: "Always"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "32Mi"
+    limits:
+      cpu: "250m"
+      memory: "128Mi"
+
+  config:
+    timezone: "utc"
+
+dependencies:
+  amqp:
+    host: "bus-rabbitmq"
+    port: 5672
+    vhost: ""
+    user: "demo"
+    password: "demo"
+    queue: "webhooks"
+  amqp_yavin:
+    host: "bus-rabbitmq"
+    port: 5672
+    vhost: ""
+    user: "demo"
+    password: "demo"
+    queue: "webhooks"
+  mysql:
+    host: "db-mysql"
+    port: 3306
+    user: "webhook"
+    password: "webhook"
+    rootUser: "root"
+    rootPassword: "demo"
+    database: "webhook"
+    version: "8.0"
+    charset: "utf8"
+  redis:
+    host: "cache-redis-master"
+    port: 6379
+    password: "demo"
+
+migration:
+  activeDeadlineSeconds: 60
+
+
+ingress:
+  port: 80
+

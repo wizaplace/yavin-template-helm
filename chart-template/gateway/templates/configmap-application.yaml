@@ -1,0 +1,21 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "authentication-gateway.fullname" . }}
+  labels:
+    {{- include "authentication-gateway.labels" . | nindent 4 }}
+data:
+  APP_ENV: {{ .Values.application.configuration.mode | quote }}
+  MYSQL_URL: {{ printf "%s:%s@tcp(%s:%.0f)/%s?parseTime=true&multiStatements=true" .Values.dependencies.mysql.user .Values.dependencies.mysql.password .Values.dependencies.mysql.host .Values.dependencies.mysql.port .Values.dependencies.mysql.database | quote }}
+  REDIS_URL: {{ printf "%s:%.0f" .Values.dependencies.redis.host .Values.dependencies.redis.port | quote }}
+  REDIS_PASSWORD: {{ .Values.dependencies.redis.password | quote }}
+  AMQP_QUEUE_NAME: {{ .Values.dependencies.amqp.queue | quote }}
+  AMQP_ADDRESS: {{ printf "amqp://%s:%s@%s:%.0f/%s" .Values.dependencies.amqp.user .Values.dependencies.amqp.password .Values.dependencies.amqp.host .Values.dependencies.amqp.port .Values.dependencies.amqp.vhost | quote }}
+  AMQP_MAX_MSG: {{ .Values.application.configuration.amqp.maxMsg | quote }}
+  AMQP_RECONNECT_DELAY: {{ .Values.application.configuration.amqp.reconnectDelay | quote }}
+  PEM_PUBLIC_KEY: {{ toYaml .Values.application.configuration.pem.publicKey | indent 4 }}
+  PEM_PRIVATE_KEY: {{ toYaml .Values.application.configuration.pem.privateKey | indent 4 }}
+  JWT_EXPIRATION_DELAY: {{ .Values.application.configuration.jwt.expirationDelay | quote }}
+  JWT_DISABLE_SIGN_CHECK: {{ .Values.application.configuration.jwt.disableSignCheck | quote }}
+  PROXY_TO_URI: {{ .Values.application.configuration.proxyUri | quote }}

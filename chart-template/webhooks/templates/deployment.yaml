@@ -1,0 +1,152 @@
+{{- range $deployment_name, $deployment_value := .Values.deployment }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "2"
+  name: {{ template "webhooks.fullname" $ }}-{{ $deployment_name }}
+  labels:
+    {{- include "webhooks.labels" $ | nindent 4 }}
+    name: {{ $deployment_name }}
+spec:
+  progressDeadlineSeconds: {{ $deployment_value.progress_deadline_seconds }}
+  replicas: {{ $deployment_value.replicas }}
+  revisionHistoryLimit: {{ $deployment_value.revision_history_limit }}
+  selector:
+    matchLabels:
+      chart: {{ template "webhooks.chart" $ }}
+      name: {{ $deployment_name }}
+  strategy:
+    type: {{ $deployment_value.rolling_update.type }}
+    rollingUpdate:
+      maxSurge: {{ $deployment_value.rolling_update.max_surge }}
+      maxUnavailable: {{ $deployment_value.rolling_update.max_unavailable }}
+  template:
+    metadata:
+      labels:
+        {{- include "webhooks.labels" $ | nindent 8 }}
+        name: {{ $deployment_name }}
+      annotations:
+        {{- if eq $deployment_name "web" }}
+        checksum/nginx-config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+        {{- end }}
+        checksum/php-config: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+    spec:
+      restartPolicy: {{ $deployment_value.restart_policy }}
+      terminationGracePeriodSeconds: {{  $deployment_value.termination_grace_period_seconds }}
+      volumes:
+        {{- if eq $deployment_name "web" }}
+        - name: {{ template "webhooks.fullname" $ }}-nginx-config
+          configMap:
+            name: {{ template "webhooks.fullname" $ }}-nginx-config
+        {{- end }}
+        - name: {{ template "webhooks.fullname" $ }}-php-config
+          secret:
+            secretName: {{ template "webhooks.fullname" $ }}-php-config
+      initContainers:
+        - name: "waiting-amqp"
+          image: "busybox"
+          imagePullPolicy: "IfNotPresent"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do nc ${AMQP_HOST} ${AMQP_PORT} -w 1 -z && break; sleep 1; done"]
+          env:
+            - name: "AMQP_HOST"
+              value: {{ $.Values.dependencies.amqp.host | squote }}
+            - name: "AMQP_PORT"
+              value: {{ $.Values.dependencies.amqp.port | squote }}
+        - name: "waiting-mysql"
+          image: "busybox"
+          imagePullPolicy: "IfNotPresent"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do nc ${MYSQL_HOST} ${MYSQL_PORT} -w 1 -z && break; sleep 1; done"]
+          env:
+            - name: "MYSQL_HOST"
+              value: {{ $.Values.dependencies.mysql.host | squote }}
+            - name: "MYSQL_PORT"
+              value: {{ $.Values.dependencies.mysql.port | squote }}
+      containers:
+        {{- if eq $deployment_name "web" }}
+        - name: "nginx"
+          image: {{ $.Values.nginx.image.repository }}:{{ $.Values.nginx.image.tag }}
+          imagePullPolicy: {{ $.Values.nginx.image.pullPolicy }}
+          ports:
+            - containerPort: {{ $.Values.nginx.port }}
+          volumeMounts:
+            - name: {{ template "webhooks.fullname" $ }}-nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: {{ template "webhooks.fullname" $ }}-nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+            - name: {{ template "webhooks.fullname" $ }}-nginx-config
+              mountPath: /var/www/html/public/index.php
+              subPath: index.php
+          resources:
+            requests:
+              cpu: {{ $.Values.nginx.resources.requests.cpu }}
+              memory: {{ $.Values.nginx.resources.requests.memory }}
+            limits:
+              cpu: {{ $.Values.nginx.resources.limits.cpu }}
+              memory: {{ $.Values.nginx.resources.limits.memory }}
+          livenessProbe:
+            httpGet:
+              scheme: "HTTP"
+              path: {{ $.Values.probe.liveness.path }}
+              port: {{ $.Values.nginx.port }}
+            initialDelaySeconds: {{ $.Values.probe.liveness.initial_delay_seconds }}
+            periodSeconds: {{ $.Values.probe.liveness.period_seconds }}
+            successThreshold: {{ $.Values.probe.liveness.success_threshold }}
+            failureThreshold: {{ $.Values.probe.liveness.failure_threshold }}
+            timeoutSeconds: {{ $.Values.probe.liveness.timeout_seconds }}
+          readinessProbe:
+            httpGet:
+              scheme: "HTTP"
+              path: {{ $.Values.probe.readiness.path }}
+              port: {{ $.Values.nginx.port }}
+            initialDelaySeconds: {{ $.Values.probe.readiness.initial_delay_seconds }}
+            periodSeconds: {{ $.Values.probe.readiness.period_seconds }}
+            successThreshold: {{ $.Values.probe.readiness.success_threshold }}
+            failureThreshold: {{ $.Values.probe.readiness.failure_threshold }}
+            timeoutSeconds: {{ $.Values.probe.readiness.timeout_seconds }}
+        {{- end }}
+        - name: "php"
+          image: {{ $.Values.php.image.registry }}/{{ $.Values.php.image.name }}:{{ $.Values.php.image.tag }}
+          imagePullPolicy: {{ $.Values.php.image.pullPolicy }}
+          {{- if $deployment_value.command }}
+          command: {{ $deployment_value.command }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ template "webhooks.fullname" $ }}-php-config
+          resources:
+            requests:
+              cpu: {{ $.Values.php.resources.requests.cpu }}
+              memory: {{ $.Values.php.resources.requests.memory }}
+            limits:
+              cpu: {{ $.Values.php.resources.limits.cpu }}
+              memory: {{ $.Values.php.resources.limits.memory }}
+          {{- if eq $deployment_name "web" }}
+          livenessProbe:
+            httpGet:
+              scheme: "HTTP"
+              path: {{ $.Values.probe.liveness.path }}
+              port: {{ $.Values.nginx.port }}
+            initialDelaySeconds: {{ $.Values.probe.liveness.initial_delay_seconds }}
+            periodSeconds: {{ $.Values.probe.liveness.period_seconds }}
+            successThreshold: {{ $.Values.probe.liveness.success_threshold }}
+            failureThreshold: {{ $.Values.probe.liveness.failure_threshold }}
+            timeoutSeconds: {{ $.Values.probe.liveness.timeout_seconds }}
+          readinessProbe:
+            httpGet:
+              scheme: "HTTP"
+              path: {{ $.Values.probe.readiness.path }}
+              port: {{ $.Values.nginx.port }}
+            initialDelaySeconds: {{ $.Values.probe.readiness.initial_delay_seconds }}
+            periodSeconds: {{ $.Values.probe.readiness.period_seconds }}
+            successThreshold: {{ $.Values.probe.readiness.success_threshold }}
+            failureThreshold: {{ $.Values.probe.readiness.failure_threshold }}
+            timeoutSeconds: {{ $.Values.probe.readiness.timeout_seconds }}
+          {{- end }}
+{{- end }}

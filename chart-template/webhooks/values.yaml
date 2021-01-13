@@ -1,0 +1,92 @@
+deployment:
+  web:
+    restart_policy: "Always"
+    termination_grace_period_seconds: 10
+    progress_deadline_seconds: 60
+    replicas: 2 
+    revision_history_limit: 10
+
+    rolling_update:
+      type: "RollingUpdate"
+      max_surge: 1
+      max_unavailable: 1
+
+  messenger-consumer:
+    command: "['bin/console', 'messenger:consume', 'async', '--memory-limit=128M']"
+    restart_policy: "Always"
+    termination_grace_period_seconds: 10
+    progress_deadline_seconds: 60
+    replicas: 2 
+    revision_history_limit: 10
+    rolling_update:
+      type: "RollingUpdate"
+      max_surge: 1
+      max_unavailable: 1
+
+probe:
+  liveness:
+    path: "/healthz"
+    initial_delay_seconds: 1
+    period_seconds: 30
+    success_threshold: 1
+    failure_threshold: 3
+    timeout_seconds: 1
+
+  readiness:
+    path: "/healthz"
+    initial_delay_seconds: 5
+    period_seconds: 30
+    success_threshold: 1
+    failure_threshold: 2
+    timeout_seconds: 1
+
+nginx:
+  port: 80
+  image:
+    repository: "nginx"
+    tag: "1.19.4"
+    pullPolicy: "IfNotPresent"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+
+php:
+  image:
+    registry: "wiza"
+    name: "webhook-demo"
+    tag: "1.0.0"
+    pullPolicy: "Always"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "32Mi"
+    limits:
+      cpu: "250m"
+      memory: "128Mi"
+
+  config:
+    timezone: "utc"
+
+
+migration:
+  active_deadline_seconds: 60
+
+ingress:
+  port: 80
+
+#### values for dependencies
+internal-rabbitmq:
+  persistence:
+    enabled: false
+  auth:
+#    user: "webhooks"   TODO : initialize rabbitmq dependency
+#    password: "webhooks"
+    user: "user"
+    password: "rabbitmq"
+

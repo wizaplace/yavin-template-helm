@@ -1,0 +1,16 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "authentication-gateway.fullname" . }}
+  labels:
+    {{- include "authentication-gateway.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    chart: {{ template "authentication-gateway.chart" . }}
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.application.servicePort }}
+      targetPort: {{ .Values.application.containerPort }}

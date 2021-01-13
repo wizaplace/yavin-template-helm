@@ -1,0 +1,49 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "authentication-gateway.fullname" $ }}-migration
+  labels:
+    {{- include "authentication-gateway.labels" $ | nindent 4 }}
+  generateName: migration-job-gateway
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  activeDeadlineSeconds: {{ $.Values.migration.activeDeadlineSeconds }}
+  backoffLimit: 0
+  parallelism: 1
+  template:
+    metadata:
+      name: {{ template "authentication-gateway.fullname" $ }}-migration
+      labels:
+        {{- include "authentication-gateway.labels" $ | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: {{ template "authentication-gateway.fullname" $ }}-migration
+          configMap:
+            name: {{ template "authentication-gateway.fullname" $ }}-migration
+      initContainers:
+        - name: "waiting-mysql"
+          image: "busybox"
+          imagePullPolicy: "IfNotPresent"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do nc ${MYSQL_HOST} ${MYSQL_PORT} -w 1 -z && break; sleep 1; done"]
+          env:
+            - name: "MYSQL_HOST"
+              value: {{ $.Values.dependencies.mysql.host | squote }}
+            - name: "MYSQL_PORT"
+              value: {{ $.Values.dependencies.mysql.port | squote }}
+      containers:
+        - name: "migration"
+          image: {{ $.Values.application.image.registry }}/{{ $.Values.application.image.name }}:{{ $.Values.application.image.tag }}
+          imagePullPolicy: {{ $.Values.application.image.pullPolicy }}
+          command: ["/usr/local/bin/migrate"]
+          args: ["-database", "$(MYSQL_ROOT_URL)", "-path", "/opt/database/migrations", "up"]
+          envFrom:
+            - configMapRef:
+                name: {{ template "authentication-gateway.fullname" $ }}-migration

@@ -1,0 +1,12 @@
+apiVersion: "v2"
+name: "webhooks"
+description: "Webhooks are automated messages sent from apps when something happens."
+version: 0.0.1
+home: "https://github.com/wizaplace/ms-webhooks"
+kubeVersion: ">=1.15.0"
+type: "application"
+maintainers:
+  - name: "Philippe VANDERMOERE"
+    email: "philippe@wizacha.com"
+  - name: "Damien BOURCET"
+    email: "damien.bourcet@wizacha.com"

@@ -1,0 +1,57 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "webhooks.fullname" $ }}-migration
+  labels:
+    {{- include "webhooks.labels" $ | nindent 4 }}
+    name: migration
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  activeDeadlineSeconds: {{ $.Values.migration.active_deadline_seconds }}
+  backoffLimit: 1
+  parallelism: 1
+  template:
+    metadata:
+      name: {{ template "webhooks.fullname" $ }}-migration
+      labels:
+        {{- include "webhooks.labels" $ | nindent 8 }}
+        name: migration
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: {{ template "webhooks.fullname" $ }}-php-config-dependencies
+          secret:
+            secretName: {{ template "webhooks.fullname" $ }}-php-config-dependencies
+      initContainers:
+              #  - name: "waiting-internal-amqp"
+              #    image: "busybox"
+              #    imagePullPolicy: "IfNotPresent"
+              #    command: ["/bin/sh"]
+              #    args: ["-c", "while true; do nc ${AMQP_HOST} ${AMQP_PORT} -w 1 -z && break; sleep 1; done"]
+              #    env:
+              #      - name: "AMQP_HOST"
+              #        value: {{ $.Values.dependencies.amqp.host | squote }}
+              #      - name: "AMQP_PORT"
+              #        value: {{ $.Values.dependencies.amqp.port | squote }}
+        - name: "waiting-mysql"
+          image: "busybox"
+          imagePullPolicy: "IfNotPresent"
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do nc ${MYSQL_HOST} ${MYSQL_PORT} -w 1 -z && break; sleep 1; done"]
+          env:
+            - name: "MYSQL_HOST"
+              value: {{ $.Values.dependencies.mysql.host | squote }}
+            - name: "MYSQL_PORT"
+              value: {{ $.Values.dependencies.mysql.port | squote }}
+      containers:
+        - name: "migration"
+          image: {{ $.Values.php.image.registry }}/{{ $.Values.php.image.name }}:{{ $.Values.php.image.tag }}
+          imagePullPolicy: {{ $.Values.php.image.pullPolicy }}
+          command: ["make", "migrate"]
+          envFrom:
+            - secretRef:
+                name: {{ template "webhooks.fullname" $ }}-php-config-dependencies
